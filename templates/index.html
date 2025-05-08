@@ -1,0 +1,348 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>General User Dashboard - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background: #f5f5f5;
+      color: #333;
+      font-family: 'Arial', sans-serif;
+      overflow-x: hidden;
+    }
+    .navbar {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      position: relative;
+      transition: color 0.3s ease;
+      opacity: 0;
+    }
+    .nav-item:hover {
+      color: #007bff;
+    }
+    .nav-item:hover::after {
+      transform: scaleX(1);
+    }
+    .nav-item::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      bottom: -5px;
+      left: 0;
+      background-color: #007bff;
+      transform: scaleX(0);
+      transform-origin: bottom right;
+      transition: transform 0.3s ease-out;
+    }
+    .nav-item i {
+      margin-right: 12px;
+    }
+    .nav-item:nth-child(1) { animation: drop 0.5s ease forwards 0.1s; }
+    .nav-item:nth-child(2) { animation: drop 0.5s ease forwards 0.2s; }
+    .nav-item:nth-child(3) { animation: drop 0.5s ease forwards 0.3s; }
+    .nav-item:nth-child(4) { animation: drop 0.5s ease forwards 0.4s; }
+    .nav-item:nth-child(5) { animation: drop 0.5s ease forwards 0.5s; }
+    .nav-item:nth-child(6) { animation: drop 0.5s ease forwards 0.6s; }
+    @keyframes drop {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 123, 255, 0.1);
+    }
+    .insights-container {
+      position: relative;
+      padding: 20px;
+      background: transparent;
+    }
+    .insights-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0, 123, 255, 0.03) 0%, rgba(0, 0, 0, 0) 100%);
+      z-index: 0;
+      animation: gradientShift 8s infinite;
+    }
+    @keyframes gradientShift {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    .insights-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      align-items: center;
+    }
+    .stat-block {
+      text-align: center;
+      transition: transform 0.4s ease;
+    }
+    .stat-block:hover {
+      transform: translateY(-5px);
+    }
+    .circle-progress {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      border-radius: 50%;
+      background: conic-gradient(#007bff 0%, #007bff calc(var(--percentage) * 3.6deg), #e0e0e0 calc(var(--percentage) * 3.6deg) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      transition: transform 0.4s ease;
+    }
+    .circle-progress:hover {
+      transform: scale(1.05);
+    }
+    .circle-progress-inner {
+      width: 90%;
+      height: 90%;
+      background: #fff;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #007bff;
+    }
+    .stat-text {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+    .highlight-stat {
+      display: inline-block;
+      padding: 10px 20px;
+      background: rgba(0, 123, 255, 0.1);
+      border-radius: 20px;
+      font-weight: bold;
+      color: #007bff;
+      transition: background 0.3s ease, transform 0.4s ease;
+    }
+    .highlight-stat:hover {
+      background: rgba(0, 123, 255, 0.2);
+      transform: scale(1.05);
+    }
+    .animate-fade {
+      opacity: 0;
+      animation: fadeIn 0.8s ease forwards;
+    }
+    .animate-slide-left {
+      opacity: 0;
+      animation: slideLeft 0.8s ease forwards;
+    }
+    .animate-slide-right {
+      opacity: 0;
+      animation: slideRight 0.8s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideLeft {
+      from { transform: translateX(-50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideRight {
+      from { transform: translateX(50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    footer {
+      background: #fff;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <nav class="navbar p-4 fixed w-full z-10">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="text-xl font-bold text-gray-800">DeepfakeGuard</div>
+      <ul class="flex space-x-6">
+        <li class="nav-item"><a href="{% url 'upload_media' %}"><i class="fas fa-upload"></i> Upload Media</a></li>
+        <li class="nav-item"><a href="{% url 'notification' %}"><i class="fas fa-bell"></i> Notifications</a></li>
+        <li class="nav-item"><a href="{% url 'flag_content' %}"><i class="fas fa-flag"></i> Flag Content</a></li>
+        <li class="nav-item"><a href="{% url 'analysis_history' %}"><i class="fas fa-history"></i> Analysis History</a></li>
+        <li class="nav-item"><a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a></li>
+        <li class="nav-item"><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="pt-32 pb-16">
+    <div class="container mx-auto text-center">
+      <h1 class="text-5xl font-bold text-gray-800 mb-4 animate-fade">Welcome to DeepfakeGuard</h1>
+      <p class="text-lg text-gray-600 animate-fade" style="animation-delay: 0.2s;">
+        Safeguard your digital identity with cutting-edge AI deepfake detection.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12 animate-slide-left">Recent Activity</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for result in latest_results %}
+          <div class="card p-6 flex items-start animate-slide-left" style="animation-delay: {{ forloop.counter0|add:0.0 }}s;">
+            <i class="fas {% if result.media_type == 'image' %}fa-image{% else %}fa-video{% endif %} text-blue-600 mr-4" style="font-size: 24px;"></i>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">{% if forloop.first %}Latest Scan{% else %}Previous Detection{% endif %}</h3>
+              <p class="text-gray-600">Media: {% if result.media_type == 'image' %}Image{% else %}Video{% endif %} ({{ result.media_file.name|cut:'uploads/' }})</p>
+              <p class="text-gray-600">Confidence: {{ result.confidence|floatformat:2 }}%</p>
+              <p class="{% if result.prediction|lower in 'deepfake,fake' %}text-red-600{% else %}text-green-600{% endif %}">
+                {% if result.prediction|lower in 'deepfake,fake' %}Potential Deepfake{% else %}Authentic{% endif %}
+              </p>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-span-full text-center text-gray-500">No recent activity available.</div>
+        {% endfor %}
+        <div class="card p-6 flex items-start animate-slide-left" style="animation-delay: 0.4s;">
+          <i class="fas fa-chart-line text-blue-600 mr-4" style="font-size: 24px;"></i>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">Total Scans</h3>
+            <p class="text-gray-600">Completed: {{ total_analyzed }}</p>
+            <p class="text-gray-600">Flagged: {{ flagged_count }}</p>
+            <p class="text-gray-600">Last 30 Days (Placeholder)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12 animate-slide-right">Deepfake Insights Dashboard</h2>
+      <div class="insights-container">
+        <div class="insights-grid">
+          <div class="stat-block animate-slide-right">
+            <div class="circle-progress" style="--percentage: {{ accuracy|floatformat:0 }};">
+              <div class="circle-progress-inner">
+                {{ accuracy|floatformat:0 }}%
+              </div>
+            </div>
+            <p class="stat-text">Detection Accuracy</p>
+          </div>
+          <div class="stat-block animate-slide-right" style="animation-delay: 0.2s;">
+            <div class="circle-progress" style="--percentage: {{ total_analyzed_percentage|floatformat:0 }};">
+              <div class="circle-progress-inner">
+                {{ total_analyzed }}
+              </div>
+            </div>
+            <p class="stat-text">Media Analyzed</p>
+          </div>
+          <div class="stat-block animate-slide-right" style="animation-delay: 0.4s;">
+            <div class="circle-progress" style="--percentage: {{ flagged_percentage|floatformat:0 }};">
+              <div class="circle-progress-inner">
+                {{ flagged_percentage|floatformat:0 }}%
+              </div>
+            </div>
+            <p class="stat-text">Flagged Incidents</p>
+          </div>
+          <div class="stat-block animate-slide-right" style="animation-delay: 0.6s;">
+            <div class="highlight-stat">
+              {{ deepfake_count }} Detections
+            </div>
+            <p class="stat-text mt-2">Total Deepfake Detections</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12 animate-slide-left">Security Insights</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card p-6 flex items-start animate-slide-left">
+          <i class="fas fa-shield-alt text-blue-600 mr-4" style="font-size: 24px;"></i>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">Identity Protection</h3>
+            <p class="text-gray-600">Your account is secured with MFA and facial recognition.</p>
+          </div>
+        </div>
+        <div class="card p-6 flex items-start animate-slide-left" style="animation-delay: 0.2s;">
+          <i class="fas fa-exclamation-triangle text-blue-600 mr-4" style="font-size: 24px;"></i>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">Fraud Alerts</h3>
+            <p class="text-gray-600">{{ flagged_count }} potential deepfakes flagged this month.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12 animate-slide-left">Your Flagged Cases</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% if cases %}
+          {% for case in cases %}
+            <div class="card p-6 animate-slide-left">
+              <h3 class="text-lg font-semibold text-blue-700">{{ case.title }}</h3>
+              <p class="text-gray-600">Status: <span class="font-semibold">{{ case.status }}</span></p>
+              <p class="text-sm text-gray-500">Submitted: {{ case.created_at }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="col-span-full text-center text-gray-500">
+            No flagged cases found.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  
+  <section class="py-16 bg-gray-50">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-semibold text-center text-gray-800 mb-12 animate-slide-right">Recent Notifications</h2>
+      <div class="space-y-4">
+        {% if notifications %}
+          {% for note in notifications %}
+            <div class="card p-4 animate-slide-right">
+              <p class="text-gray-700">{{ note.message }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ note.created_at }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center text-gray-500">
+            No notifications at the moment.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-8">
+    <div class="container mx-auto text-center">
+      <p class="text-gray-600">© 2025 DeepfakeGuard. All rights reserved.</p>
+      <div class="mt-4 flex justify-center space-x-4">
+        <a href="/privacy-policy/" class="text-gray-600 hover:text-blue-600">Privacy Policy</a>
+        <a href="/terms-of-service/" class="text-gray-600 hover:text-blue-600">Terms of Service</a>
+        <a href="/contact-us/" class="text-gray-600 hover:text-blue-600">Contact Us</a>
+      </div>
+    </div>
+  </footer>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a94dbf6fe37bc3',t:'MTc0NjM3NTM5OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

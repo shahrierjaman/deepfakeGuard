@@ -1,0 +1,506 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flagged Content - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background: #f5f7fa;
+      color: #2d3748;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+      padding: 20px 0;
+      transition: width 0.3s ease;
+    }
+    .sidebar.collapsed {
+      width: 80px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      color: #4a5568;
+      transition: background 0.3s ease, color 0.3s ease;
+      cursor: pointer;
+    }
+    .sidebar li:hover, .sidebar li.active {
+      background: #edf2f7;
+      color: #2b6cb0;
+    }
+    .sidebar li.active {
+      font-weight: 600;
+      background: #2b6cb0;
+      color: #fff;
+      border-left: 4px solid #1a4971;
+    }
+    .sidebar li i {
+      margin-right: 15px;
+    }
+    .sidebar.collapsed li span {
+      display: none;
+    }
+    .sidebar.collapsed li i {
+      margin-right: 0;
+    }
+    .toggle-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .toggle-btn:hover {
+      transform: rotate(180deg);
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: 20px 30px;
+      flex-grow: 1;
+      transition: margin-left 0.3s ease;
+    }
+    .main-content.collapsed {
+      margin-left: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .export-btn {
+      background: #2b6cb0;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .export-btn:hover {
+      background: #2c5282;
+    }
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .table-card::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300%;
+      height: 300%;
+      background: radial-gradient(circle, rgba(43, 108, 176, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+      animation: radialPulse 12s infinite;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+    .card-content {
+      position: relative;
+      z-index: 1;
+    }
+    .table-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: #edf2f7;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #4a5568;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2d3748;
+    }
+    tr:hover {
+      background: #f7fafc;
+    }
+    .action-btn {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-right: 5px;
+    }
+    .action-btn:hover {
+      background: #2c5282;
+    }
+    .action-btn.remove {
+      background: #e53e3e;
+    }
+    .action-btn.remove:hover {
+      background: #c53030;
+    }
+    .filter-panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .filter-panel select, .filter-panel input {
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-content h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #2d3748;
+    }
+    .modal-content p {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .modal-content label {
+      display: block;
+      font-size: 14px;
+      color: #4a5568;
+      margin-bottom: 5px;
+    }
+    .modal-content textarea, .modal-content select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    .modal-content textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    .modal-btn.cancel {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .modal-btn.cancel:hover {
+      background: #cbd5e0;
+    }
+    .modal-btn.submit {
+      background: #2b6cb0;
+      color: #fff;
+    }
+    .modal-btn.submit:hover {
+      background: #2c5282;
+    }
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 80px;
+      }
+      .main-content {
+        margin-left: 80px;
+      }
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .filter-panel {
+        flex-direction: column;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+    @keyframes radialPulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <aside class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+      <li><a href="{% url 'user_management' %}"><i class="fas fa-users"></i><span>User Management</span></a></li>
+      <li><a href="{% url 'system_analysis' %}"><i class="fas fa-chart-bar"></i><span>System Analytics</span></a></li>
+      <li class="active"><a href="{% url 'flagged_content' %}"><i class="fas fa-flag"></i><span>Flagged Content</span></a></li>
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+    </ul>
+    <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <div class="header">
+      <h1>Flagged Content</h1>
+      <button class="export-btn" id="exportBtn">Export Report</button>
+    </div>
+
+    <div class="table-card">
+      <div class="card-content">
+        <h3>Flagged Content Overview</h3>
+        <div class="filter-panel">
+          <select id="typeFilter">
+            <option value="">All Types</option>
+            <option value="video">Video</option>
+            <option value="image">Image</option>
+            <option value="audio">Audio</option>
+          </select>
+          <select id="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="reviewed">Reviewed</option>
+            <option value="escalated">Escalated</option>
+          </select>
+          <input type="text" id="searchInput" placeholder="Search by file name...">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Type</th>
+              <th>Flagged By</th>
+              <th>Result</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="flaggedTable">
+            <tr data-id="1">
+              <td>Reported_Video.mp4</td>
+              <td class="type">Video</td>
+              <td>User123</td>
+              <td>Deepfake Detected (92%)</td>
+              <td class="status">Pending</td>
+              <td>
+                <button class="action-btn review-btn" data-action="review">Review</button>
+                <button class="action-btn remove-btn" data-action="remove">Remove</button>
+              </td>
+            </tr>
+            <tr data-id="2">
+              <td>UserImage.jpg</td>
+              <td class="type">Image</td>
+              <td>User456</td>
+              <td>Authentic (96%)</td>
+              <td class="status">Reviewed</td>
+              <td>
+                <button class="action-btn review-btn" data-action="review">Review</button>
+                <button class="action-btn remove-btn" data-action="remove">Remove</button>
+              </td>
+            </tr>
+            <tr data-id="3">
+              <td>FlaggedAudio.wav</td>
+              <td class="type">Audio</td>
+              <td>User789</td>
+              <td>Deepfake Detected (88%)</td>
+              <td class="status">Escalated</td>
+              <td>
+                <button class="action-btn review-btn" data-action="review">Review</button>
+                <button class="action-btn remove-btn" data-action="remove">Remove</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal" id="reviewModal">
+      <div class="modal-content">
+        <h2>Review Flagged Content</h2>
+        <p><strong>File Name:</strong> <span id="reviewFileName"></span></p>
+        <p><strong>Type:</strong> <span id="reviewType"></span></p>
+        <p><strong>Flagged By:</strong> <span id="reviewFlaggedBy"></span></p>
+        <p><strong>Result:</strong> <span id="reviewResult"></span></p>
+        <label for="reviewNotes">Notes</label>
+        <textarea id="reviewNotes" placeholder="Add your review notes here..."></textarea>
+        <label for="reviewStatus">Update Status</label>
+        <select id="reviewStatus">
+          <option value="pending">Pending</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="escalated">Escalated</option>
+        </select>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="cancelReviewBtn">Cancel</button>
+          <button class="modal-btn submit" id="submitReviewBtn">Submit Review</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const exportBtn = document.getElementById('exportBtn');
+    const typeFilter = document.getElementById('typeFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    const flaggedTable = document.getElementById('flaggedTable');
+    const reviewModal = document.getElementById('reviewModal');
+    const cancelReviewBtn = document.getElementById('cancelReviewBtn');
+    const submitReviewBtn = document.getElementById('submitReviewBtn');
+    const reviewFileName = document.getElementById('reviewFileName');
+    const reviewType = document.getElementById('reviewType');
+    const reviewFlaggedBy = document.getElementById('reviewFlaggedBy');
+    const reviewResult = document.getElementById('reviewResult');
+    const reviewNotes = document.getElementById('reviewNotes');
+    const reviewStatus = document.getElementById('reviewStatus');
+
+    let currentRow = null;
+
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    });
+
+    exportBtn.addEventListener('click', () => {
+      alert('Exporting flagged content report... (Simulated)');
+    });
+
+    // Review Button Functionality
+    flaggedTable.addEventListener('click', (e) => {
+      if (e.target.classList.contains('review-btn')) {
+        currentRow = e.target.closest('tr');
+        reviewFileName.textContent = currentRow.cells[0].textContent;
+        reviewType.textContent = currentRow.cells[1].textContent;
+        reviewFlaggedBy.textContent = currentRow.cells[2].textContent;
+        reviewResult.textContent = currentRow.cells[3].textContent;
+        reviewNotes.value = '';
+        reviewStatus.value = currentRow.cells[4].textContent.toLowerCase();
+        reviewModal.style.display = 'flex';
+      }
+      if (e.target.classList.contains('remove-btn')) {
+        if (confirm('Are you sure you want to remove this flagged content?')) {
+          e.target.closest('tr').remove();
+        }
+      }
+    });
+
+    cancelReviewBtn.addEventListener('click', () => {
+      reviewModal.style.display = 'none';
+    });
+
+    submitReviewBtn.addEventListener('click', () => {
+      if (currentRow) {
+        const statusCell = currentRow.querySelector('.status');
+        statusCell.textContent = reviewStatus.value.charAt(0).toUpperCase() + reviewStatus.value.slice(1);
+        reviewModal.style.display = 'none';
+      }
+    });
+
+    reviewModal.addEventListener('click', (e) => {
+      if (e.target === reviewModal) {
+        reviewModal.style.display = 'none';
+      }
+    });
+
+    // Filter and Search Functionality
+    typeFilter.addEventListener('change', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+    searchInput.addEventListener('input', filterTable);
+
+    function filterTable() {
+      const type = typeFilter.value.toLowerCase();
+      const status = statusFilter.value.toLowerCase();
+      const searchTerm = searchInput.value.toLowerCase();
+      const rows = flaggedTable.getElementsByTagName('tr');
+
+      Array.from(rows).forEach(row => {
+        const typeText = row.querySelector('.type').textContent.toLowerCase();
+        const statusText = row.querySelector('.status').textContent.toLowerCase();
+        const fileName = row.cells[0].textContent.toLowerCase();
+        const matchesType = type === '' || typeText === type;
+        const matchesStatus = status === '' || statusText === status;
+        const matchesSearch = fileName.includes(searchTerm);
+        row.style.display = matchesType && matchesStatus && matchesSearch ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

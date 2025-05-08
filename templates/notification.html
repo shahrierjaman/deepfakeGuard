@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background: #f3f4f6;
+      color: #1f2937;
+      font-family: 'Arial', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .navbar {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      position: relative;
+      transition: color 0.3s ease, transform 0.3s ease;
+      opacity: 0;
+    }
+    .nav-item:hover {
+      color: #3b82f6;
+      transform: translateY(-2px);
+    }
+    .nav-item:hover::after {
+      transform: scaleX(1);
+    }
+    .nav-item::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      bottom: -5px;
+      left: 0;
+      background-color: #3b82f6;
+      transform: scaleX(0);
+      transform-origin: bottom right;
+      transition: transform 0.3s ease-out;
+    }
+    .nav-item i {
+      margin-right: 12px;
+    }
+    .nav-item:nth-child(1) { animation: drop 0.5s ease forwards 0.1s; }
+    .nav-item:nth-child(2) { animation: drop 0.5s ease forwards 0.2s; }
+    .nav-item:nth-child(3) { animation: drop 0.5s ease forwards 0.3s; }
+    .nav-item:nth-child(4) { animation: drop 0.5s ease forwards 0.4s; }
+    .nav-item:nth-child(5) { animation: drop 0.5s ease forwards 0.5s; }
+    .nav-item:nth-child(6) { animation: drop 0.5s ease forwards 0.6s; }
+    @keyframes drop {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 60px 20px 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .notifications-panel {
+      position: relative;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    .notifications-panel::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300%;
+      height: 300%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      animation: radialPulse 8s infinite;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+    @keyframes radialPulse {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0.6; }
+      50% { opacity: 0.3; }
+      100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+    }
+    .notification-grid {
+      position: relative;
+      z-index: 1;
+      padding: 20px;
+    }
+    .notification-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      opacity: 0;
+      transform: translateY(20px);
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+    }
+    .notification-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .notification-card.unread {
+      border-left: 4px solid #3b82f6;
+      background: rgba(59, 130, 246, 0.05);
+    }
+    .notification-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    }
+    .notification-icon {
+      font-size: 24px;
+      color: #3b82f6;
+      margin-top: 2px;
+    }
+    .notification-content .title {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 5px;
+    }
+    .notification-content .message {
+      color: #4b5563;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .notification-content .time {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .notification-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 10px;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .action-btn:hover {
+      background: #3b82f6;
+      color: #fff;
+    }
+    .control-panel {
+      padding: 15px 20px;
+      background: rgba(59, 130, 246, 0.03);
+      text-align: right;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+    .mark-all-btn {
+      background: #3b82f6;
+      color: #fff;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .mark-all-btn:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+    footer {
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <nav class="navbar p-4 fixed w-full z-10">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="text-xl font-bold text-gray-800">DeepfakeGuard</div>
+      <ul class="flex space-x-6">
+        <li class="nav-item"><a href="{% url 'upload_media' %}"><i class="fas fa-upload"></i> Upload Media</a></li>
+        <li class="nav-item"><a href="{% url 'notification' %}"><i class="fas fa-bell"></i> Notifications</a></li>
+        <li class="nav-item"><a href="{% url 'flag_content' %}"><i class="fas fa-flag"></i> Flag Content</a></li>
+        <li class="nav-item"><a href="{% url 'analysis_history' %}"><i class="fas fa-history"></i> Analysis History</a></li>
+        <li class="nav-item"><a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a></li>
+        <li class="nav-item"><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="main-content pt-32">
+    <div class="header">
+      <h1 class="text-4xl font-bold text-gray-900">Notifications</h1>
+      <p class="text-gray-600 mt-2">View and manage your deepfake detection alerts.</p>
+    </div>
+    <div class="notifications-panel">
+      <div class="notification-grid">
+        <div class="notification-card unread" data-index="0">
+          <i class="fas fa-exclamation-triangle notification-icon"></i>
+          <div class="notification-content">
+            <div class="title">New Detection Alert</div>
+            <p class="message">Potential deepfake detected in your latest video upload.</p>
+            <div class="time">May 01, 2025, 10:30 AM</div>
+          </div>
+          <div class="notification-actions">
+            <button class="action-btn" data-action="mark">Mark as Read</button>
+            <button class="action-btn" data-action="delete">Delete</button>
+          </div>
+        </div>
+        <div class="notification-card" data-index="1">
+          <i class="fas fa-cog notification-icon"></i>
+          <div class="notification-content">
+            <div class="title">System Update</div>
+            <p class="message">Enhanced deepfake detection algorithm deployed.</p>
+            <div class="time">April 30, 2025, 3:15 PM</div>
+          </div>
+          <div class="notification-actions">
+            <button class="action-btn" data-action="mark">Mark as Read</button>
+            <button class="action-btn" data-action="delete">Delete</button>
+          </div>
+        </div>
+        <div class="notification-card unread" data-index="2">
+          <i class="fas fa-flag notification-icon"></i>
+          <div class="notification-content">
+            <div class="title">Flagged Content</div>
+            <p class="message">Two new items flagged in your analysis history.</p>
+            <div class="time">April 29, 2025, 9:00 AM</div>
+          </div>
+          <div class="notification-actions">
+            <button class="action-btn" data-action="mark">Mark as Read</button>
+            <button class="action-btn" data-action="delete">Delete</button>
+          </div>
+        </div>
+      </div>
+      <div class="control-panel">
+        <button class="mark-all-btn">Mark All as Read</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-8">
+    <div class="container mx-auto text-center">
+      <p class="text-gray-600">© 2025 DeepfakeGuard. All rights reserved.</p>
+      <div class="mt-4 flex justify-center space-x-4">
+        <a href="/privacy-policy/" class="text-gray-600 hover:text-blue-600">Privacy Policy</a>
+        <a href="/terms-of-service/" class="text-gray-600 hover:text-blue-600">Terms of Service</a>
+        <a href="/contact-us/" class="text-gray-600 hover:text-blue-600">Contact Us</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const notificationCards = document.querySelectorAll('.notification-card');
+    let animationDelay = 0;
+
+    notificationCards.forEach(card => {
+      setTimeout(() => {
+        card.classList.add('visible');
+      }, animationDelay);
+      animationDelay += 400; // Stagger animation by 400ms
+    });
+
+    const markAllBtn = document.querySelector('.mark-all-btn');
+    const actionButtons = document.querySelectorAll('.action-btn');
+
+    markAllBtn.addEventListener('click', () => {
+      notificationCards.forEach(card => card.classList.remove('unread'));
+    });
+
+    actionButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const card = e.target.closest('.notification-card');
+        if (e.target.dataset.action === 'mark') {
+          card.classList.remove('unread');
+        } else if (e.target.dataset.action === 'delete') {
+          card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          setTimeout(() => card.remove(), 500);
+        }
+      });
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a94dbf8c19baea',t:'MTc0NjM3NTM5OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,539 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background: #f5f7fa;
+      color: #2d3748;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    .sidebar {
+      width: 260px;
+      background: #ffffff;
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px 0;
+      transition: width 0.3s ease;
+    }
+    .sidebar.collapsed {
+      width: 80px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      color: #4a5568;
+      transition: background 0.3s ease, color 0.3s ease;
+      cursor: pointer;
+    }
+    .sidebar li:hover, .sidebar li.active {
+      background: #edf2f7;
+      color: #2b6cb0;
+    }
+    .sidebar li.active {
+      font-weight: 600;
+      background: #2b6cb0;
+      color: #fff;
+    }
+    .sidebar li i {
+      margin-right: 15px;
+    }
+    .sidebar.collapsed li span {
+      display: none;
+    }
+    .sidebar.collapsed li i {
+      margin-right: 0;
+    }
+    .toggle-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .toggle-btn:hover {
+      transform: rotate(180deg);
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: 20px 30px;
+      flex-grow: 1;
+      transition: margin-left 0.3s ease;
+    }
+    .main-content.collapsed {
+      margin-left: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .add-user-btn {
+      background: #2b6cb0;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .add-user-btn:hover {
+      background: #2c5282;
+    }
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .table-card::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300%;
+      height: 300%;
+      background: radial-gradient(circle, rgba(43, 108, 176, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+      animation: radialPulse 12s infinite;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+    .card-content {
+      position: relative;
+      z-index: 1;
+    }
+    .table-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: #edf2f7;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #4a5568;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2d3748;
+    }
+    tr:hover {
+      background: #f7fafc;
+    }
+    .action-btn {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-right: 5px;
+    }
+    .action-btn:hover {
+      background: #2c5282;
+    }
+    .action-btn.deactivate {
+      background: #e53e3e;
+    }
+    .action-btn.deactivate:hover {
+      background: #c53030;
+    }
+    .filter-panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .filter-panel select, .filter-panel input {
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-content h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #2d3748;
+    }
+    .modal-content label {
+      display: block;
+      font-size: 14px;
+      color: #4a5568;
+      margin-bottom: 5px;
+    }
+    .modal-content input, .modal-content select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .modal-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    .modal-btn.cancel {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .modal-btn.cancel:hover {
+      background: #cbd5e0;
+    }
+    .modal-btn.submit {
+      background: #2b6cb0;
+      color: #fff;
+    }
+    .modal-btn.submit:hover {
+      background: #2c5282;
+    }
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 80px;
+      }
+      .main-content {
+        margin-left: 80px;
+      }
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .filter-panel {
+        flex-direction: column;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+    @keyframes radialPulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <aside class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+      <li class="active"><a href="{% url 'user_management' %}"><i class="fas fa-users"></i><span>User Management</span></a></li>
+      <li><a href="{% url 'system_analysis' %}"><i class="fas fa-chart-bar"></i><span>System Analytics</span></a></li>
+      <li><a href="{% url 'flagged_content' %}"><i class="fas fa-flag"></i><span>Flagged Content</span></a></li>
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+    </ul>
+    <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <div class="header">
+      <h1>User Management</h1>
+      <button class="add-user-btn" id="openAddUserModal">Add New User</button>
+    </div>
+
+    <div class="table-card">
+      <div class="card-content">
+        <h3>Manage Users</h3>
+        <div class="filter-panel">
+          <select id="roleFilter">
+            <option value="">All Roles</option>
+            <option value="general user">General User</option>
+            <option value="reviewer">Reviewer</option>
+            <option value="investigator">Investigator</option>
+          </select>
+          <input type="text" id="searchInput" placeholder="Search by username or email...">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable">
+            <tr data-id="1">
+              <td>User123</td>
+              <td class="role">General User</td>
+              <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4e3b3d2b3c7f7c7d0e2b362f233e222b602d2123">[email&#160;protected]</a></td>
+              <td class="status">Active</td>
+              <td>
+                <button class="action-btn edit-btn" data-action="edit">Edit</button>
+                <button class="action-btn deactivate-btn" data-action="deactivate">Deactivate</button>
+              </td>
+            </tr>
+            <tr data-id="2">
+              <td>ReviewerBob</td>
+              <td class="role">Reviewer</td>
+              <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7e1c111c3e1b061f130e121b501d1113">[email&#160;protected]</a></td>
+              <td class="status">Active</td>
+              <td>
+                <button class="action-btn edit-btn" data-action="edit">Edit</button>
+                <button class="action-btn deactivate-btn" data-action="deactivate">Deactivate</button>
+              </td>
+            </tr>
+            <tr data-id="3">
+              <td>InvestigatorAlice</td>
+              <td class="role">Investigator</td>
+              <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b89994919b9db89d80999588949dd69b9795">[email&#160;protected]</a></td>
+              <td class="status">Active</td>
+              <td>
+                <button class="action-btn edit-btn" data-action="edit">Edit</button>
+                <button class="action-btn deactivate-btn" data-action="deactivate">Deactivate</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal" id="addUserModal">
+      <div class="modal-content">
+        <h2>Add New User</h2>
+        <label for="newUsername">Username</label>
+        <input type="text" id="newUsername" placeholder="Enter username" required>
+        <label for="newEmail">Email</label>
+        <input type="email" id="newEmail" placeholder="Enter email" required>
+        <label for="newRole">Role</label>
+        <select id="newRole" required>
+          <option value="" disabled selected>Select a role</option>
+          <option value="General User">General User</option>
+          <option value="Reviewer">Reviewer</option>
+          <option value="Investigator">Investigator</option>
+        </select>
+        <label for="newPassword">Password</label>
+        <input type="password" id="newPassword" placeholder="Enter password" required>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="cancelAddUserBtn">Cancel</button>
+          <button class="modal-btn submit" id="submitAddUserBtn">Add User</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="editUserModal">
+      <div class="modal-content">
+        <h2>Edit User</h2>
+        <p><strong>Username:</strong> <span id="editUsername"></span></p>
+        <p><strong>Email:</strong> <span id="editEmail"></span></p>
+        <label for="editRole">Role</label>
+        <select id="editRole">
+          <option value="General User">General User</option>
+          <option value="Reviewer">Reviewer</option>
+          <option value="Investigator">Investigator</option>
+        </select>
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="cancelEditUserBtn">Cancel</button>
+          <button class="modal-btn submit" id="submitEditUserBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const openAddUserModal = document.getElementById('openAddUserModal');
+    const addUserModal = document.getElementById('addUserModal');
+    const cancelAddUserBtn = document.getElementById('cancelAddUserBtn');
+    const submitAddUserBtn = document.getElementById('submitAddUserBtn');
+    const editUserModal = document.getElementById('editUserModal');
+    const cancelEditUserBtn = document.getElementById('cancelEditUserBtn');
+    const submitEditUserBtn = document.getElementById('submitEditUserBtn');
+    const roleFilter = document.getElementById('roleFilter');
+    const searchInput = document.getElementById('searchInput');
+    const usersTable = document.getElementById('usersTable');
+
+    let currentRow = null;
+    let userCounter = 3; // Starting counter for new user IDs
+
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    });
+
+    // Add User Modal
+    openAddUserModal.addEventListener('click', () => {
+      addUserModal.style.display = 'flex';
+    });
+
+    cancelAddUserBtn.addEventListener('click', () => {
+      addUserModal.style.display = 'none';
+    });
+
+    submitAddUserBtn.addEventListener('click', () => {
+      const username = document.getElementById('newUsername').value;
+      const email = document.getElementById('newEmail').value;
+      const role = document.getElementById('newRole').value;
+      const password = document.getElementById('newPassword').value;
+
+      if (username && email && role && password) {
+        userCounter++;
+        const newRow = document.createElement('tr');
+        newRow.setAttribute('data-id', userCounter);
+        newRow.innerHTML = `
+          <td>${username}</td>
+          <td class="role">${role}</td>
+          <td>${email}</td>
+          <td class="status">Active</td>
+          <td>
+            <button class="action-btn edit-btn" data-action="edit">Edit</button>
+            <button class="action-btn deactivate-btn" data-action="deactivate">Deactivate</button>
+          </td>
+        `;
+        usersTable.appendChild(newRow);
+        addUserModal.style.display = 'none';
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newEmail').value = '';
+        document.getElementById('newRole').value = '';
+        document.getElementById('newPassword').value = '';
+      } else {
+        alert('Please fill in all fields.');
+      }
+    });
+
+    addUserModal.addEventListener('click', (e) => {
+      if (e.target === addUserModal) {
+        addUserModal.style.display = 'none';
+      }
+    });
+
+    // Edit User Modal
+    usersTable.addEventListener('click', (e) => {
+      if (e.target.classList.contains('edit-btn')) {
+        currentRow = e.target.closest('tr');
+        document.getElementById('editUsername').textContent = currentRow.cells[0].textContent;
+        document.getElementById('editEmail').textContent = currentRow.cells[2].textContent;
+        document.getElementById('editRole').value = currentRow.cells[1].textContent;
+        editUserModal.style.display = 'flex';
+      }
+      if (e.target.classList.contains('deactivate-btn')) {
+        const statusCell = e.target.closest('tr').querySelector('.status');
+        const currentStatus = statusCell.textContent;
+        statusCell.textContent = currentStatus === 'Active' ? 'Deactivated' : 'Active';
+        e.target.textContent = currentStatus === 'Active' ? 'Activate' : 'Deactivate';
+      }
+    });
+
+    cancelEditUserBtn.addEventListener('click', () => {
+      editUserModal.style.display = 'none';
+    });
+
+    submitEditUserBtn.addEventListener('click', () => {
+      if (currentRow) {
+        const role = document.getElementById('editRole').value;
+        currentRow.querySelector('.role').textContent = role;
+        editUserModal.style.display = 'none';
+      }
+    });
+
+    editUserModal.addEventListener('click', (e) => {
+      if (e.target === editUserModal) {
+        editUserModal.style.display = 'none';
+      }
+    });
+
+    // Filter and Search Functionality
+    roleFilter.addEventListener('change', filterTable);
+    searchInput.addEventListener('input', filterTable);
+
+    function filterTable() {
+      const role = roleFilter.value.toLowerCase();
+      const searchTerm = searchInput.value.toLowerCase();
+      const rows = usersTable.getElementsByTagName('tr');
+
+      Array.from(rows).forEach(row => {
+        const roleText = row.querySelector('.role').textContent.toLowerCase();
+        const username = row.cells[0].textContent.toLowerCase();
+        const email = row.cells[2].textContent.toLowerCase();
+        const matchesRole = role === '' || roleText === role;
+        const matchesSearch = username.includes(searchTerm) || email.includes(searchTerm);
+        row.style.display = matchesRole && matchesSearch ? '' : 'none';
+      });
+    }
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a983401b6853ce',t:'MTc0NjM3NzU4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

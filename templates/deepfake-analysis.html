@@ -1,0 +1,502 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deepfake Analysis - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background: #f5f7fa;
+      color: #2d3748;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+      padding: 20px 0;
+      transition: width 0.3s ease;
+    }
+    .sidebar.collapsed {
+      width: 80px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      color: #4a5568;
+      transition: background 0.3s ease, color 0.3s ease;
+      cursor: pointer;
+    }
+    .sidebar li:hover, .sidebar li.active {
+      background: #edf2f7;
+      color: #2b6cb0;
+    }
+    .sidebar li.active {
+      font-weight: 600;
+      background: #2b6cb0;
+      color: #fff;
+      border-left: 4px solid #1a4971;
+    }
+    .sidebar li i {
+      margin-right: 15px;
+    }
+    .sidebar.collapsed li span {
+      display: none;
+    }
+    .sidebar.collapsed li i {
+      margin-right: 0;
+    }
+    .toggle-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .toggle-btn:hover {
+      transform: rotate(180deg);
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: 20px 30px;
+      flex-grow: 1;
+      transition: margin-left 0.3s ease;
+    }
+    .main-content.collapsed {
+      margin-left: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .case-selector {
+      margin-bottom: 20px;
+    }
+    .case-selector label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      margin-right: 10px;
+    }
+    .case-selector select {
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2d3748;
+    }
+    .analysis-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .analysis-card::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 300%;
+      height: 300%;
+      background: radial-gradient(circle, rgba(43, 108, 176, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+      animation: radialPulse 12s infinite;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+    .card-content {
+      position: relative;
+      z-index: 1;
+    }
+    .analysis-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    .case-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+    .case-details p {
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .case-details p strong {
+      color: #2d3748;
+    }
+    .media-preview {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .media-placeholder {
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      background: #e2e8f0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      font-size: 16px;
+      color: #4a5568;
+    }
+    .analysis-tools {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+    .analysis-tools h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+    .tool {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .tool-btn {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .tool-btn:hover {
+      background: #2c5282;
+    }
+    .tool-result {
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .findings-form {
+      margin-top: 20px;
+    }
+    .findings-form label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      margin-bottom: 5px;
+    }
+    .findings-form select,
+    .findings-form textarea,
+    .findings-form input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    .findings-form textarea {
+      height: 100px;
+      resize: vertical;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .form-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    .form-btn.cancel {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .form-btn.cancel:hover {
+      background: #cbd5e0;
+    }
+    .form-btn.submit {
+      background: #2b6cb0;
+      color: #fff;
+    }
+    .form-btn.submit:hover {
+      background: #2c5282;
+    }
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 80px;
+      }
+      .main-content {
+        margin-left: 80px;
+      }
+      .case-details {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .media-placeholder {
+        height: 200px;
+      }
+    }
+    @keyframes radialPulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <aside class="sidebar" id="sidebar">
+    <ul>
+      <li><a href="{% url 'investigator_dashboard' %}"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+      <li><a href="{% url 'case_management' %}"><i class="fas fa-briefcase"></i><span>Case Management</span></a></li>
+      <li class="active"><a href="{% url 'deepfake_analysis' %}"><i class="fas fa-search"></i><span>Deepfake Analysis</span></a></li>
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+    </ul>
+    <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <div class="header">
+      <h1>Deepfake Analysis</h1>
+    </div>
+
+    <div class="case-selector">
+      <label for="caseSelector">Select Case:</label>
+      <select id="caseSelector" onchange="updateCase()">
+        <option value="reported_video">Reported_Video.mp4 (User123, 92%)</option>
+        <option value="user_image">UserImage.jpg (User456, 96%)</option>
+      </select>
+    </div>
+
+    <div class="analysis-card">
+      <div class="card-content">
+        <h3>Analyze Case</h3>
+        
+        <div class="case-details" id="caseDetails">
+          <p><strong>File Name:</strong> Reported_Video.mp4</p>
+          <p><strong>Flagged By:</strong> User123</p>
+          <p><strong>Initial Result:</strong> Deepfake Detected (92%)</p>
+          <p><strong>Priority:</strong> High</p>
+          <p><strong>Status:</strong> Assigned</p>
+          <p><strong>Assigned To:</strong> InvestigatorAlice</p>
+        </div>
+
+        <div class="media-preview">
+          <div class="media-placeholder" id="mediaPlaceholder">
+            [Video Preview Placeholder - Reported_Video.mp4]
+          </div>
+        </div>
+
+        <div class="analysis-tools">
+          <h4>Analysis Tools</h4>
+          <div class="tool">
+            <button class="tool-btn" id="frameAnalysisBtn">Frame-by-Frame Analysis</button>
+            <span class="tool-result" id="frameAnalysisResult">Not yet analyzed</span>
+          </div>
+          <div class="tool">
+            <button class="tool-btn" id="audioAnalysisBtn">Audio Waveform Analysis</button>
+            <span class="tool-result" id="audioAnalysisResult">Not yet analyzed</span>
+          </div>
+          <div class="tool">
+            <button class="tool-btn" id="confidenceScoreBtn">Calculate Confidence Score</button>
+            <span class="tool-result" id="confidenceScoreResult">Not yet analyzed</span>
+          </div>
+        </div>
+
+        <div class="findings-form">
+          <h4>Submit Findings</h4>
+          <label for="finalDetermination">Final Determination</label>
+          <select id="finalDetermination">
+            <option value="" disabled selected>Select determination</option>
+            <option value="confirmed-deepfake">Confirmed Deepfake</option>
+            <option value="authentic">Authentic</option>
+            <option value="inconclusive">Inconclusive</option>
+          </select>
+          <label for="confidenceScore">Confidence Score (%)</label>
+          <input type="number" id="confidenceScore" min="0" max="100" placeholder="Enter confidence score">
+          <label for="analysisComments">Comments</label>
+          <textarea id="analysisComments" placeholder="Add your analysis comments here..."></textarea>
+          <div class="form-actions">
+            <button class="form-btn cancel" id="cancelBtn">Cancel</button>
+            <button class="form-btn submit" id="submitBtn">Submit Findings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const caseSelector = document.getElementById('caseSelector');
+    const caseDetails = document.getElementById('caseDetails');
+    const mediaPlaceholder = document.getElementById('mediaPlaceholder');
+    const frameAnalysisBtn = document.getElementById('frameAnalysisBtn');
+    const audioAnalysisBtn = document.getElementById('audioAnalysisBtn');
+    const confidenceScoreBtn = document.getElementById('confidenceScoreBtn');
+    const frameAnalysisResult = document.getElementById('frameAnalysisResult');
+    const audioAnalysisResult = document.getElementById('audioAnalysisResult');
+    const confidenceScoreResult = document.getElementById('confidenceScoreResult');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    });
+
+    // Case Data (Simulated)
+    const cases = {
+      reported_video: {
+        fileName: 'Reported_Video.mp4',
+        flaggedBy: 'User123',
+        initialResult: 'Deepfake Detected (92%)',
+        priority: 'High',
+        status: 'Assigned',
+        assignedTo: 'InvestigatorAlice',
+        mediaText: '[Video Preview Placeholder - Reported_Video.mp4]'
+      },
+      user_image: {
+        fileName: 'UserImage.jpg',
+        flaggedBy: 'User456',
+        initialResult: 'Authentic (96%)',
+        priority: 'Low',
+        status: 'Assigned',
+        assignedTo: 'InvestigatorAlice',
+        mediaText: '[Image Preview Placeholder - UserImage.jpg]'
+      }
+    };
+
+    // Update Case Details
+    function updateCase() {
+      const selectedCase = caseSelector.value;
+      const caseData = cases[selectedCase];
+
+      caseDetails.innerHTML = `
+        <p><strong>File Name:</strong> ${caseData.fileName}</p>
+        <p><strong>Flagged By:</strong> ${caseData.flaggedBy}</p>
+        <p><strong>Initial Result:</strong> ${caseData.initialResult}</p>
+        <p><strong>Priority:</strong> ${caseData.priority}</p>
+        <p><strong>Status:</strong> ${caseData.status}</p>
+        <p><strong>Assigned To:</strong> ${caseData.assignedTo}</p>
+      `;
+      mediaPlaceholder.textContent = caseData.mediaText;
+      frameAnalysisResult.textContent = 'Not yet analyzed';
+      audioAnalysisResult.textContent = 'Not yet analyzed';
+      confidenceScoreResult.textContent = 'Not yet analyzed';
+      document.getElementById('confidenceScore').value = '';
+      document.getElementById('finalDetermination').value = '';
+      document.getElementById('analysisComments').value = '';
+    }
+
+    // Initialize with Default Case
+    updateCase();
+
+    // Simulated Analysis Tools
+    frameAnalysisBtn.addEventListener('click', () => {
+      const selectedCase = caseSelector.value;
+      frameAnalysisResult.textContent = selectedCase === 'reported_video' ? 
+        'Detected inconsistencies in 5 frames (Simulated)' : 
+        'No inconsistencies detected (Simulated)';
+    });
+
+    audioAnalysisBtn.addEventListener('click', () => {
+      const selectedCase = caseSelector.value;
+      audioAnalysisResult.textContent = selectedCase === 'reported_video' ? 
+        'Voice modulation detected (Simulated)' : 
+        'No audio anomalies detected (Simulated)';
+    });
+
+    confidenceScoreBtn.addEventListener('click', () => {
+      const selectedCase = caseSelector.value;
+      const confidence = selectedCase === 'reported_video' ? 95 : 98;
+      confidenceScoreResult.textContent = `Deepfake Confidence: ${confidence}% (Simulated)`;
+      document.getElementById('confidenceScore').value = confidence;
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to cancel? Unsaved changes will be lost.')) {
+        alert('Returning to Case Management... (Simulated)');
+        // In a real system, this would redirect to case-management.html
+      }
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const determination = document.getElementById('finalDetermination').value;
+      const confidence = document.getElementById('confidenceScore').value;
+      const comments = document.getElementById('analysisComments').value || 'No comments';
+      const selectedCase = caseSelector.value;
+      const caseData = cases[selectedCase];
+
+      if (!determination || !confidence) {
+        alert('Please select a final determination and enter a confidence score.');
+        return;
+      }
+
+      const findings = {
+        fileName: caseData.fileName,
+        determination: determination,
+        confidence: confidence,
+        comments: comments,
+        timestamp: new Date().toLocaleString()
+      };
+
+      alert(`Findings submitted for ${caseData.fileName}:\nDetermination: ${determination}\nConfidence: ${confidence}%\nComments: ${comments}\n(Simulated)`);
+      // In a real system, this would send findings to the backend, update flagged-content.html, and notify the General User
+      alert('Returning to Case Management... (Simulated)');
+      // Redirect to case-management.html
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a998f7b82253d8',t:'MTc0NjM3ODQ3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

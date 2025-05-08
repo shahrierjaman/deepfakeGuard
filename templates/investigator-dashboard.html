@@ -1,0 +1,437 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investigator Dashboard - DeepfakeGuard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <style>
+    body {
+      background: #f5f7fa;
+      color: #2d3748;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      position: fixed;
+      height: 100%;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+      padding: 20px 0;
+      transition: width 0.3s ease;
+    }
+    .sidebar.collapsed {
+      width: 80px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar li {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      color: #4a5568;
+      transition: background 0.3s ease, color 0.3s ease;
+      cursor: pointer;
+    }
+    .sidebar li:hover, .sidebar li.active {
+      background: #edf2f7;
+      color: #2b6cb0;
+    }
+    .sidebar li.active {
+      font-weight: 600;
+      background: #2b6cb0;
+      color: #fff;
+      border-left: 4px solid #1a4971;
+    }
+    .sidebar li i {
+      margin-right: 15px;
+    }
+    .sidebar.collapsed li span {
+      display: none;
+    }
+    .sidebar.collapsed li i {
+      margin-right: 0;
+    }
+    .toggle-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .toggle-btn:hover {
+      transform: rotate(180deg);
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: 20px 30px;
+      flex-grow: 1;
+      transition: margin-left 0.3s ease;
+    }
+    .main-content.collapsed {
+      margin-left: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .summary-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    .summary-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+    .summary-item span {
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .summary-item strong {
+      font-size: 16px;
+      color: #2b6cb0;
+    }
+    .chart-container {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      height: 300px;
+    }
+    .table-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    .table-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2d3748;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: #edf2f7;
+      font-weight: 600;
+      color: #4a5568;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    tr:hover {
+      background: #f7fafc;
+    }
+    .priority-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .priority-high { background: #e53e3e; }
+    .priority-medium { background: #dd6b20; }
+    .priority-low { background: #38a169; }
+    .action-btn {
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-right: 5px;
+    }
+    .action-btn:hover {
+      background: #2c5282;
+    }
+    .filter-panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .filter-panel select {
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 80px;
+      }
+      .main-content {
+        margin-left: 80px;
+      }
+      .chart-container {
+        height: 250px;
+      }
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .filter-panel {
+        flex-direction: column;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <aside class="sidebar" id="sidebar">
+    <ul>
+      <li class="active"><a href="{% url 'investigator_dashboard' %}"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+      <li><a href="{% url 'case_management' %}"><i class="fas fa-briefcase"></i><span>Case Management</span></a></li>
+      <li><a href="{% url 'deepfake_analysis' %}"><i class="fas fa-search"></i><span>Deepfake Analysis</span></a></li>
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+    </ul>
+    <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <div class="header">
+      <h1>Investigator Dashboard</h1>
+      <div class="filter-panel">
+        <select id="statusFilter" onchange="filterCases()">
+          <option value="">All Statuses</option>
+          <option value="Assigned">Assigned</option>
+          <option value="Pending">Pending</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="summary-card col-span-1 md:col-span-1">
+        <h3>Case Summary</h3>
+        <div class="summary-item">
+          <span>Assigned Cases</span>
+          <strong id="assignedCount">5</strong>
+        </div>
+        <div class="summary-item">
+          <span>Pending Analyses</span>
+          <strong id="pendingCount">3</strong>
+        </div>
+        <div class="summary-item">
+          <span>Completed Analyses</span>
+          <strong id="completedCount">12</strong>
+        </div>
+        <div class="summary-item">
+          <span>Average Confidence</span>
+          <strong>94%</strong>
+        </div>
+      </div>
+
+      <div class="chart-container col-span-1 md:col-span-2">
+        <canvas id="casePriorityChart"></canvas>
+      </div>
+
+      <div class="chart-container col-span-1 md:col-span-2">
+        <canvas id="caseStatusChart"></canvas>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h3>Assigned Cases</h3>
+      <table id="assignedCasesTable">
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Flagged By</th>
+            <th>Result</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-status="Assigned">
+            <td>Reported_Video.mp4</td>
+            <td>User123</td>
+            <td>Deepfake Detected (92%)</td>
+            <td><span class="priority-badge priority-high">High</span></td>
+            <td>Assigned</td>
+            <td><button class="action-btn manage-btn">Manage Case</button></td>
+          </tr>
+          <tr data-status="Pending">
+            <td>UserImage.jpg</td>
+            <td>User456</td>
+            <td>Authentic (96%)</td>
+            <td><span class="priority-badge priority-low">Low</span></td>
+            <td>Pending</td>
+            <td><button class="action-btn manage-btn">Manage Case</button></td>
+          </tr>
+          <tr data-status="Completed">
+            <td>FlaggedAudio.wav</td>
+            <td>User789</td>
+            <td>Deepfake Detected (88%)</td>
+            <td><span class="priority-badge priority-medium">Medium</span></td>
+            <td>Completed</td>
+            <td><button class="action-btn manage-btn">Manage Case</button></td>
+          </tr>
+          <tr data-status="Assigned">
+            <td>OldVideo.mp4</td>
+            <td>User101</td>
+            <td>Deepfake Detected (95%)</td>
+            <td><span class="priority-badge priority-high">High</span></td>
+            <td>Assigned</td>
+            <td><button class="action-btn manage-btn">Manage Case</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const assignedCasesTable = document.getElementById('assignedCasesTable');
+    const assignedCount = document.getElementById('assignedCount');
+    const pendingCount = document.getElementById('pendingCount');
+    const completedCount = document.getElementById('completedCount');
+
+    toggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    });
+
+    // Simulate navigation to Case Management
+    document.querySelectorAll('.manage-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fileName = btn.closest('tr').cells[0].textContent;
+        alert(`Navigating to Case Management for ${fileName}... (Simulated)`);
+        // In a real system, this would redirect to case-management.html with the case ID
+      });
+    });
+
+    // Filter Cases
+    function filterCases() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      const rows = assignedCasesTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+      Array.from(rows).forEach(row => {
+        const status = row.getAttribute('data-status');
+        row.style.display = statusFilter === '' || status === statusFilter ? '' : 'none';
+      });
+      updateCounts();
+    }
+
+    // Update Counts
+    function updateCounts() {
+      const rows = assignedCasesTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+      let assigned = 0, pending = 0, completed = 0;
+      Array.from(rows).forEach(row => {
+        const status = row.cells[4].textContent;
+        if (row.style.display !== 'none') {
+          if (status === 'Assigned') assigned++;
+          else if (status === 'Pending') pending++;
+          else if (status === 'Completed') completed++;
+        }
+      });
+      assignedCount.textContent = assigned;
+      pendingCount.textContent = pending;
+      completedCount.textContent = completed;
+    }
+
+    // Initialize Counts
+    updateCounts();
+
+    // Chart.js Configurations
+    const casePriorityChart = new Chart(document.getElementById('casePriorityChart'), {
+      type: 'pie',
+      data: {
+        labels: ['High', 'Medium', 'Low'],
+        datasets: [{
+          data: [3, 1, 1],
+          backgroundColor: ['#e53e3e', '#dd6b20', '#38a169']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: 'Case Priority Distribution' }
+        }
+      }
+    });
+
+    const caseStatusChart = new Chart(document.getElementById('caseStatusChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Assigned', 'Pending', 'Completed'],
+        datasets: [{
+          label: 'Cases',
+          data: [2, 1, 1],
+          backgroundColor: '#2b6cb0'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: 'Case Status Overview' }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Number of Cases' } }
+        }
+      }
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93a998f74c79458d',t:'MTc0NjM3ODQ3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

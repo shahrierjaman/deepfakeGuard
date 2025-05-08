@@ -1,0 +1,322 @@
+{% load static %}
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Flag Content - DeepfakeGuard</title>
+     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+     <style>
+       body {
+         background: #f5f5f5;
+         color: #1f2937;
+         font-family: 'Inter', sans-serif;
+         overflow-x: hidden;
+         min-height: 100vh;
+         display: flex;
+         flex-direction: column;
+       }
+       .navbar {
+         background: rgba(255, 255, 255, 0.98);
+         box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+       }
+       .nav-item {
+         display: flex;
+         align-items: center;
+         position: relative;
+         transition: color 0.3s ease, transform 0.3s ease;
+         opacity: 0;
+       }
+       .nav-item:hover {
+         color: #2563eb;
+         transform: translateY(-2px);
+       }
+       .nav-item:hover::after {
+         transform: scaleX(1);
+       }
+       .nav-item::after {
+         content: '';
+         position: absolute;
+         width: 100%;
+         height: 2px;
+         bottom: -5px;
+         left: 0;
+         background-color: #2563eb;
+         transform: scaleX(0);
+         transform-origin: bottom right;
+         transition: transform 0.3s ease-out;
+       }
+       .nav-item i {
+         margin-right: 12px;
+       }
+       .nav-item:nth-child(1) { animation: drop 0.5s ease forwards 0.1s; }
+       .nav-item:nth-child(2) { animation: drop 0.5s ease forwards 0.2s; }
+       .nav-item:nth-child(3) { animation: drop 0.5s ease forwards 0.3s; }
+       .nav-item:nth-child(4) { animation: drop 0.5s ease forwards 0.4s; }
+       .nav-item:nth-child(5) { animation: drop 0.5s ease forwards 0.5s; }
+       .nav-item:nth-child(6) { animation: drop 0.5s ease forwards 0.6s; }
+       @keyframes drop {
+         from { transform: translateY(-50px); opacity: 0; }
+         to { transform: translateY(0); opacity: 1; }
+       }
+       .main-content {
+         flex-grow: 1;
+         padding: 80px 20px 40px;
+         max-width: 1200px;
+         margin: 0 auto;
+       }
+       .flag-panel {
+         position: relative;
+         background: #ffffff;
+         border-radius: 16px;
+         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+         padding: 40px;
+         overflow: hidden;
+       }
+       .flag-panel::before {
+         content: '';
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 300%;
+         height: 300%;
+         background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+         animation: radialPulse 10s infinite;
+         transform: translate(-50%, -50%);
+         z-index: 0;
+       }
+       @keyframes radialPulse {
+         0% { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+         50% { opacity: 0.2; }
+         100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+       }
+       .flag-form {
+         position: relative;
+         z-index: 1;
+       }
+       .form-group {
+         margin-bottom: 25px;
+         opacity: 0;
+         animation: fadeInUp 0.6s ease forwards;
+       }
+       .form-group:nth-child(1) { animation-delay: 0.2s; }
+       .form-group:nth-child(2) { animation-delay: 0.4s; }
+       .form-group:nth-child(3) { animation-delay: 0.6s; }
+       .form-group label {
+         display: flex;
+         align-items: center;
+         font-weight: 500;
+         color: #1f2937;
+         margin-bottom: 8px;
+         font-size: 15px;
+       }
+       .form-group input,
+       .form-group textarea,
+       .form-group select {
+         width: 100%;
+         padding: 12px;
+         border: 1px solid #d1d5db;
+         border-radius: 8px;
+         font-size: 14px;
+         color: #1f2937;
+         background: #f9fafb;
+         transition: border-color 0.3s ease, box-shadow 0.3s ease;
+       }
+       .form-group input:focus,
+       .form-group textarea:focus,
+       .form-group select:focus {
+         border-color: #2563eb;
+         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+         outline: none;
+       }
+       .form-group textarea {
+         resize: vertical;
+         min-height: 120px;
+       }
+       .submit-btn {
+         background: #2563eb;
+         color: #fff;
+         padding: 12px 24px;
+         border: none;
+         border-radius: 8px;
+         cursor: pointer;
+         width: 100%;
+         font-weight: 500;
+         font-size: 15px;
+         transition: background 0.3s ease, transform 0.3s ease;
+         opacity: 0;
+         animation: fadeInUp 0.6s ease forwards 0.8s;
+       }
+       .submit-btn:hover {
+         background: #1d4ed8;
+         transform: translateY(-2px);
+       }
+       .submit-btn.loading::after {
+         content: '';
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 20px;
+         height: 20px;
+         border: 3px solid #fff;
+         border-top: 3px solid transparent;
+         border-radius: 50%;
+         animation: spin 1s linear infinite;
+         transform: translate(-50%, -50%);
+       }
+       @keyframes spin {
+         to { transform: translate(-50%, -50%) rotate(360deg); }
+       }
+       .success-message {
+         display: none;
+         text-align: center;
+         color: #16a34a;
+         font-weight: 500;
+         margin-top: 20px;
+         opacity: 0;
+         animation: fadeIn 0.5s ease forwards;
+       }
+       .success-message .checkmark {
+         display: inline-block;
+         width: 24px;
+         height: 24px;
+         margin-right: 8px;
+         position: relative;
+       }
+       .success-message .checkmark::before {
+         content: '';
+         position: absolute;
+         width: 6px;
+         height: 12px;
+         border: solid #16a34a;
+         border-width: 0 3px 3px 0;
+         transform: rotate(45deg);
+         top: 2px;
+         left: 8px;
+         opacity: 0;
+         animation: drawCheck 0.5s ease forwards;
+       }
+       @keyframes drawCheck {
+         0% { height: 0; opacity: 0; }
+         50% { height: 12px; opacity: 1; }
+         100% { opacity: 1; }
+       }
+       @keyframes fadeIn {
+         from { opacity: 0; }
+         to { opacity: 1; }
+       }
+       @keyframes fadeInUp {
+         from { opacity: 0; transform: translateY(15px); }
+         to { opacity: 1; transform: translateY(0); }
+       }
+       footer {
+         background: #fff;
+         border-top: 1px solid #e5e7eb;
+         margin-top: auto;
+       }
+     </style>
+   </head>
+   <body class="min-h-screen">
+     <nav class="navbar p-4 fixed w-full z-10">
+       <div class="container mx-auto flex justify-between items-center">
+         <div class="text-xl font-bold text-gray-800">DeepfakeGuard</div>
+         <ul class="flex space-x-6">
+           <li class="nav-item"><a href="{% url 'upload_media' %}"><i class="fas fa-upload"></i> Upload Media</a></li>
+           <li class="nav-item"><a href="{% url 'notification' %}"><i class="fas fa-bell"></i> Notifications</a></li>
+           <li class="nav-item"><a href="{% url 'flag_content' %}"><i class="fas fa-flag"></i> Flag Content</a></li>
+           <li class="nav-item"><a href="{% url 'analysis_history' %}"><i class="fas fa-history"></i> Analysis History</a></li>
+           <li class="nav-item"><a href="{% url 'settings' %}"><i class="fas fa-cog"></i> Settings</a></li>
+           <li class="nav-item"><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+         </ul>
+       </div>
+     </nav>
+
+     <main class="main-content pt-32">
+       <div class="flag-panel">
+         <h2 class="text-2xl font-semibold text-center mb-6">Flag Suspicious Media</h2>
+         <form method="post" action="{% url 'flag_content' %}" class="flag-form" id="flag-form">
+           {% csrf_token %}
+           <div class="form-group">
+             <label for="id_media">Select Media</label>
+             {{ form.media }}
+             {% if form.media.errors %}
+               <p class="text-red-600 text-sm mt-1">{{ form.media.errors }}</p>
+             {% endif %}
+           </div>
+           <div class="form-group">
+             <label for="id_reason">Reason for Flagging</label>
+             {{ form.reason }}
+             {% if form.reason.errors %}
+               <p class="text-red-600 text-sm mt-1">{{ form.reason.errors }}</p>
+             {% endif %}
+           </div>
+           <div class="form-group">
+             <label for="id_message">Optional Message</label>
+             {{ form.message }}
+             {% if form.message.errors %}
+               <p class="text-red-600 text-sm mt-1">{{ form.message.errors }}</p>
+             {% endif %}
+             {% if form.non_field_errors %}
+               <p class="text-red-600 text-sm mt-1">{{ form.non_field_errors }}</p>
+             {% endif %}
+           </div>
+           <button type="submit" class="submit-btn" id="submit-btn">Submit Report</button>
+         </form>
+         {% if success %}
+           <div class="success-message" id="success-message" style="display: flex;">
+             <span class="checkmark"></span>
+             Thank you! Your report has been submitted.
+           </div>
+         {% endif %}
+         {% if error %}
+           <p class="text-red-600 text-center mt-4">{{ error }}</p>
+         {% endif %}
+       </div>
+     </main>
+
+     <footer class="py-8">
+       <div class="container mx-auto text-center">
+         <p class="text-gray-600">© 2025 DeepfakeGuard. All rights reserved.</p>
+         <div class="mt-4 flex justify-center space-x-4">
+           <a href="/privacy-policy/" class="text-gray-600 hover:text-blue-600">Privacy Policy</a>
+           <a href="/terms-of-service/" class="text-gray-600 hover:text-blue-600">Terms of Service</a>
+           <a href="/contact-us/" class="text-gray-600 hover:text-blue-600">Contact Us</a>
+         </div>
+       </div>
+     </footer>
+
+     <script>
+       const submitBtn = document.getElementById('submit-btn');
+       const form = document.getElementById('flag-form');
+       const successMessage = document.getElementById('success-message');
+
+       submitBtn.addEventListener('click', (e) => {
+         console.log('[JS DEBUG] Submit button clicked');
+         const media = document.getElementById('id_media').value;
+         const reason = document.getElementById('id_reason').value;
+
+         if (!media || !reason) {
+           e.preventDefault();
+           console.log('[JS DEBUG] Validation failed: media or reason missing');
+           alert('Please select a media file and a reason for flagging.');
+           return;
+         }
+
+         console.log('[JS DEBUG] Form valid, applying loading state');
+         submitBtn.classList.add('loading');
+         submitBtn.disabled = true;
+         console.log('[JS DEBUG] Submitting form');
+         form.submit(); // Explicitly submit the form
+       });
+
+       window.addEventListener('load', () => {
+         console.log('[JS DEBUG] Page loaded');
+         if (!successMessage || successMessage.style.display !== 'flex') {
+           form.reset();
+           console.log('[JS DEBUG] Form reset on load');
+         }
+       });
+     </script>
+   </body>
+   </html>
